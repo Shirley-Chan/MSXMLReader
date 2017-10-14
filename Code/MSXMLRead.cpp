@@ -58,7 +58,7 @@ namespace Replace {
 	}
 }
 
-std::basic_string<TCHAR> Node::operator [] (const long Count) const {
+std::basic_string<TCHAR> Node::GetData(const long Count) const {
 	IXMLDOMNode* lpItem;
 	this->NodeList->get_item(Count, &lpItem);
 	BSTR Strings;
@@ -91,11 +91,16 @@ MSXMLRead::MSXMLRead(const std::basic_string<TCHAR> FileName, const std::basic_s
 	this->lpXmlDoc->put_async(VARIANT_FALSE);
 	this->lpXmlDoc->load(_variant_t(FileName.c_str()), &Result);
 	if (0 == Result) {
-		this->lpXmlDoc->Release();
 		CoUninitialize();
 		throw std::runtime_error("xml read failed");
 	}
 	this->CommonPath = CommonPath;
+}
+
+MSXMLRead::~MSXMLRead() {
+	CoUninitialize();
+	this->Data.clear();
+	this->CommonPath.clear();
 }
 
 IXMLDOMNodeList* MSXMLRead::XmlSetNodeList(const std::basic_string<TCHAR> NodePath) {
@@ -122,12 +127,16 @@ IXMLDOMNodeList* MSXMLRead::XmlSetNodeList(const std::basic_string<TCHAR> NodePa
 
 long MSXMLRead::GetLength(const std::basic_string<TCHAR> NodePath) const noexcept {
 	for (const Node i : this->Data) if (i.NodePath == this->CommonPath + NodePath) return i.GetLength();
+	return -1;
 }
 
 void MSXMLRead::LoadFromFile(const std::basic_string<TCHAR> NodePath) {
-	IXMLDOMNodeList* NodeList = this->XmlSetNodeList(NodePath);
-	if (NodeList == NULL) return;
-	this->Data.emplace_back(Node(this->CommonPath + NodePath, NodeList));
+	Node node = {};
+	node.NodePath = this->CommonPath + NodePath;
+	node.NodePath.resize(std::char_traits<TCHAR>::length(node.NodePath.c_str()));
+	node.NodeList = this->XmlSetNodeList(NodePath);
+	node.NodeList->get_length(&node.Length);
+	this->Data.emplace_back(node);
 }
 
 void MSXMLRead::ChangeCommonPath(const std::basic_string<TCHAR> NewRoot) {
@@ -138,12 +147,6 @@ void MSXMLRead::ChangeCommonPath(const std::basic_string<TCHAR> NewRoot) {
 bool MSXMLRead::NodeDataExists(const std::basic_string<TCHAR> NodePath) const noexcept {
 	const std::basic_string<TCHAR> FullPath = this->CommonPath + NodePath;
 	return std::any_of(this->Data.begin(), this->Data.end(), [FullPath](const Node i) { return i.NodePath == FullPath; });
-}
-
-
-Node::Node(const std::basic_string<TCHAR> NodePath, IXMLDOMNodeList* NodeList)
-	: NodePath(NodePath), NodeList(NodeList) {
-	NodeList->get_length(&this->Length);
 }
 
 Node MSXMLRead::operator [] (const std::basic_string<TCHAR> NodePath) const {
