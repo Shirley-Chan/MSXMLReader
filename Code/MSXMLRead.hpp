@@ -1,12 +1,13 @@
 ﻿#ifndef __MSXMLREAD_HPP__
 #define __MSXMLREAD_HPP__
+#include <msxml.h>
+#include <tchar.h>
+#include <wrl/client.h>
 #include <string>
 #include <vector>
 #include <utility>
 #include <algorithm>
-#include <msxml.h>
-#include <tchar.h>
-#include <wrl/client.h>
+#include <type_traits>
 
 class MSXMLRead;
 

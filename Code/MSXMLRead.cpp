@@ -1,7 +1,6 @@
 ﻿#include "MSXMLRead.hpp"
 #include <Shlwapi.h>
 #include <comdef.h>
-#include <type_traits>
 #pragma comment(lib, "Shlwapi.lib")
 
 namespace Win32Error {
